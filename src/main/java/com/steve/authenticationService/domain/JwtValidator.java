@@ -17,36 +17,34 @@ public class JwtValidator {
         this.userDetailsService = userDetailsService;
     }
 
-    public boolean validateJwt(String authHeader) throws AuthenticationException {
-
-        if (authHeader == null || !authHeader.startsWith("Bearer")) {
-            LOGGER.info("fell over at the first check for Bearer and not null");
-            return false;
+    public ValidationResponse validateJwt(String accessKey) throws AuthenticationException {
+        if (accessKey == null || accessKey.equals("")) {
+            LOGGER.info("access token not provided");
+            return new ValidationResponse(false, "access token not provided");
         }
-        String jwt = authHeader.substring(7);
-        LOGGER.info("extracted jwt={}", jwt);
-        String email = jwtService.extractEmail(jwt);
-        LOGGER.info("extracted email={}", email);
-        if (email == null) {
-            LOGGER.info("email not found or something like that");
-            throw new AuthenticationException("email not found or something like that");
+        try {
+            String email = jwtService.extractEmail(accessKey);
+            LOGGER.info("extracted email={}", email);
+            if (email == null) {
+                String message = "No email provided in token";
+                return new ValidationResponse(false, message);
+            }
+            UserDetails userDetails = getUserDetailsOrThrow(email);
+            boolean result = authenticateValidJwt(accessKey, userDetails);
+            return new ValidationResponse(result);
+        } catch (Exception exception) {
+            LOGGER.info("Error decoding jwt");
+            return new ValidationResponse(false, exception.getMessage());
         }
-        UserDetails userDetails = getUserDetailsOrThrow(email);
-        boolean result = authenticateValidJwt(jwt, userDetails);
-        LOGGER.info("should be returning true");
-        return result;
     }
 
     private boolean authenticateValidJwt(String jwt, UserDetails userDetails) {
-        LOGGER.info("authenticating user={} with granted authorities={}", userDetails.getUsername(), userDetails.getAuthorities());
-        if (jwtService.isTokenValid(jwt, userDetails)) {
-            LOGGER.info("Token is valid");
-            return true;
-        } else {
-            LOGGER.info("token not valid for user={}", userDetails);
+        if (!jwtService.isTokenValid(jwt, userDetails)) {
+            LOGGER.info("accessKey not valid for user={}", userDetails);
             return false;
         }
-
+        LOGGER.info("accessKey is valid for user={}", userDetails);
+        return true;
     }
 
     private UserDetails getUserDetailsOrThrow(String email) {

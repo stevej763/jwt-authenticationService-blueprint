@@ -33,7 +33,7 @@ public class JwtService {
     public String generateToken(Map<String, Object> additionalClaims, UserDetails userDetails) {
         Date currentTime = new Date(System.currentTimeMillis());
         Date expireTime = new Date(System.currentTimeMillis() + jwtProperties.getTokenLifespanMillis());
-        LOGGER.info("token issueTime={} expiryTime={}", currentTime, expireTime);
+        LOGGER.info("accessKey issueTime={} expiryTime={}", currentTime, expireTime);
         return Jwts.builder()
                 .setClaims(additionalClaims)
                 .setSubject(userDetails.getUsername())

@@ -3,6 +3,7 @@ package com.steve.authenticationService.api;
 import com.steve.authenticationService.client.JwtValidationRequest;
 import com.steve.authenticationService.client.JwtValidationResponse;
 import com.steve.authenticationService.domain.JwtValidator;
+import com.steve.authenticationService.domain.ValidationResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -27,15 +28,14 @@ public class JwtValidatorResource {
 
     @PostMapping(value = "/validate", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<JwtValidationResponse> validate(@RequestBody JwtValidationRequest jwtValidationRequest) {
-        LOGGER.info("validation endpoint reached");
         try {
-            LOGGER.info("sending header for validation header={}", jwtValidationRequest.token());
-            boolean response = jwtValidator.validateJwt(jwtValidationRequest.token());
+            LOGGER.info("validating accessKey={}", jwtValidationRequest.accessKey());
+            ValidationResponse response = jwtValidator.validateJwt(jwtValidationRequest.accessKey());
             LOGGER.info("response={}", response);
-            return ResponseEntity.ok(new JwtValidationResponse(response));
+            return ResponseEntity.ok(new JwtValidationResponse(response.valid(), response.error()));
         } catch (AuthenticationException exception) {
             LOGGER.info("exception caught={}", exception.getMessage());
-            return ResponseEntity.ok(new JwtValidationResponse(false));
+            return ResponseEntity.ok(new JwtValidationResponse(false, "authentication error"));
         }
     }
 }
